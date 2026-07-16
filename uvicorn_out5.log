@@ -1,0 +1,14 @@
+INFO:     Started server process [30024]
+INFO:     Waiting for application startup.
+C:\Users\sanji\AppData\Local\Programs\Python\Python310\lib\site-packages\sklearn\base.py:376: InconsistentVersionWarning: Trying to unpickle estimator DecisionTreeClassifier from version 1.6.1 when using version 1.5.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+C:\Users\sanji\AppData\Local\Programs\Python\Python310\lib\site-packages\sklearn\base.py:376: InconsistentVersionWarning: Trying to unpickle estimator RandomForestClassifier from version 1.6.1 when using version 1.5.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8010 (Press CTRL+C to quit)
+Model loaded successfully.
+INFO:     127.0.0.1:57127 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57129 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57130 - "GET / HTTP/1.1" 200 OK
