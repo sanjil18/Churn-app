@@ -4,6 +4,10 @@ from pathlib import Path
 
 MODEL_PATH = Path(__file__).parent.parent / "model" / "churn_model.joblib"
 
+# Lowered from the model's default 0.5 to catch more at-risk customers: a customer
+# who's actually going to churn but gets missed costs more than a false alarm does.
+CHURN_THRESHOLD = 0.4
+
 _model = None
 
 
@@ -50,10 +54,10 @@ def predict_churn(customer: dict) -> dict:
     encoded_df = pd.get_dummies(input_df, drop_first=True)
     encoded_df = encoded_df.reindex(columns=model.feature_names_in_, fill_value=0)
 
-    prediction = model.predict(encoded_df)[0]
     probability = model.predict_proba(encoded_df)[0][1]  # probability of "Yes" class
+    prediction = "Yes" if probability >= CHURN_THRESHOLD else "No"
 
     return {
-        "churn_prediction": "Yes" if prediction == 1 or prediction == "Yes" else "No",
+        "churn_prediction": prediction,
         "churn_probability": round(float(probability), 4),
     }
