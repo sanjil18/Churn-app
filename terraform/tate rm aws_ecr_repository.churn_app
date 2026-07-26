@@ -1,0 +1,10 @@
+{
+    "repository": {
+        "repositoryArn": "arn:aws:ecr:eu-north-1:821122422530:repository/churn-app-repo",
+        "registryId": "821122422530",
+        "repositoryName": "churn-app-repo",
+        "repositoryUri": "821122422530.dkr.ecr.eu-north-1.amazonaws.com/churn-app-repo",
+        "createdAt": "2026-07-17T22:40:00.567000+05:30",
+        "imageTagMutability": "MUTABLE"
+    }
+}
