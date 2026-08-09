@@ -53,14 +53,48 @@ jobs:
             ]
           }
           EOF
-          aws ssm send-command \
+
+          COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ env.ECS_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy latest churn-app image" \
             --parameters file:///tmp/deploy-commands.json \
-            --region "${{ env.AWS_REGION }}"
+            --region "${{ env.AWS_REGION }}" \
+            --query "Command.CommandId" \
+            --output text)
 
-      - name: Wait for app to redeploy
-        run: |
-          echo "Deployment command sent. Give the instance ~30-60s to pull and restart."
-          sleep 45
+          echo "SSM CommandId: $COMMAND_ID"
+
+          STATUS="Pending"
+          for i in $(seq 1 20); do
+            sleep 5
+
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${{ env.ECS_INSTANCE_ID }}" \
+              --region "${{ env.AWS_REGION }}" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
+
+            echo "Attempt $i: status=$STATUS"
+
+            if [ "$STATUS" = "Success" ]; then
+              echo "Deployment succeeded."
+              exit 0
+            fi
+
+            if [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ]; then
+              echo "Deployment failed with status: $STATUS"
+              echo "----- StandardErrorContent -----"
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "${{ env.ECS_INSTANCE_ID }}" \
+                --region "${{ env.AWS_REGION }}" \
+                --query "StandardErrorContent" \
+                --output text
+              exit 1
+            fi
+          done
+
+          echo "Timed out waiting for deployment to reach a final status (last status: $STATUS)."
+          exit 1
