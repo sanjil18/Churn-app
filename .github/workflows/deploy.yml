@@ -49,7 +49,9 @@ jobs:
               "docker pull ${ECR_REGISTRY}/churn-app-repo:latest",
               "docker stop churn-app || true",
               "docker rm churn-app || true",
-              "docker run -d --restart unless-stopped -p 8000:8000 --name churn-app ${ECR_REGISTRY}/churn-app-repo:latest"
+              "docker run -d --restart unless-stopped -p 8000:8000 --name churn-app ${ECR_REGISTRY}/churn-app-repo:latest",
+              "docker system df",
+              "docker image prune -af"
             ]
           }
           EOF

@@ -20,6 +20,11 @@ resource "aws_instance" "churn_app" {
   vpc_security_group_ids = [aws_security_group.churn_app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_ecr_profile.name
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
     aws_region  = var.aws_region
     ecr_repo_url = aws_ecr_repository.churn_app.repository_url
