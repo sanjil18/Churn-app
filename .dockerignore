@@ -1,7 +1,8 @@
-__pycache__
-*.pyc
-.git
-.gitignore
-.venv
 venv
-*.ipynb_checkpoints
+mlruns
+mlflow.db
+*.log
+*.deb
+terraform
+.git
+.claude

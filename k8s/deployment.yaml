@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: churn-api
-          image: churn-app:latest
+          image: churn-app:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
