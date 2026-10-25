@@ -21,11 +21,17 @@ app.add_middleware(
 )
 
 
+# True only after the model has loaded successfully; /ready reports this
+model_ready = False
+
+
 @app.on_event("startup")
 def startup_event():
     # Load model once when the container starts, not on every request
+    global model_ready
     try:
         load_model()
+        model_ready = True
         print("Model loaded successfully.")
     except FileNotFoundError as e:
         print(f"WARNING: {e}")
@@ -33,7 +39,16 @@ def startup_event():
 
 @app.get("/health")
 def health_check():
+    # Liveness: the process is up and answering. Says nothing about the model.
     return {"status": "ok"}
+
+
+@app.get("/ready")
+def readiness_check():
+    # Readiness: the model is loaded and the app can serve /predict
+    if not model_ready:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    return {"status": "ready"}
 
 
 @app.post("/predict", response_model=PredictionOutput)

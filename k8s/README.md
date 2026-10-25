@@ -26,8 +26,8 @@ These manifests run the churn prediction API on a local [kind](https://kind.sigs
    ```
 2. Build the image from the repo root and load it into the cluster:
    ```bash
-   docker build -t churn-app:latest .
-   kind load docker-image churn-app:latest --name dev
+   docker build -t churn-app:v3 .
+   kind load docker-image churn-app:v3 --name dev
    ```
 3. Install metrics-server (the HPA needs it). On kind it needs `--kubelet-insecure-tls`:
    ```bash
@@ -71,5 +71,5 @@ These manifests run the churn prediction API on a local [kind](https://kind.sigs
 
 ## Known limitations
 
-- The image in these tests was built from an earlier model. The deployment setup is what is demonstrated here, not the latest model's accuracy.
-- The model was saved with scikit-learn 1.6.1 but the image installs 1.5.0, which produces an `InconsistentVersionWarning` at startup. Pin one version in `requirements.txt` for both training and serving.
+- The image `churn-app:v2` is built from the model currently in `model/` (scikit-learn 1.5.0, the same version `requirements.txt` pins), and its startup logs show no `InconsistentVersionWarning`. The deployment setup is what is demonstrated here; the model is a baseline random forest (about 79% accuracy, recall 0.63 for churners), not a tuned production model.
+- The readiness probe calls `/ready`, which returns 503 unless the model is loaded, so a pod with a missing model file never receives traffic. `/health` only shows the process is up, and the startup and liveness probes use it. A missing model therefore leaves the pod running but not Ready, rather than restarting it.

@@ -21,8 +21,10 @@ spec:
     spec:
       containers:
         - name: churn-api
-          image: churn-app:v2
+          image: churn-app:v3
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
           ports:
             - containerPort: 8000
           envFrom:
@@ -43,11 +45,13 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: 8000
             periodSeconds: 5
+            timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /health
               port: 8000
             periodSeconds: 10
+            timeoutSeconds: 3
