@@ -35,6 +35,10 @@ resource "aws_instance" "churn_app" {
     Name    = var.project_name
     Project = var.project_name
   }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 # Elastic IP so the public address stays fixed even if the instance restarts
