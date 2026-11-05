@@ -92,6 +92,62 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      - name: Ensure EC2 instance is ready for SSM
+        run: |
+          INSTANCE_STATE=$(aws ec2 describe-instances \
+            --instance-ids "${{ env.ECS_INSTANCE_ID }}" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "Reservations[0].Instances[0].State.Name" \
+            --output text)
+
+          echo "Current EC2 instance state: $INSTANCE_STATE"
+
+          case "$INSTANCE_STATE" in
+            running)
+              ;;
+            stopped)
+              echo "Starting EC2 instance ${ECS_INSTANCE_ID}..."
+              aws ec2 start-instances \
+                --instance-ids "${{ env.ECS_INSTANCE_ID }}" \
+                --region "${{ env.AWS_REGION }}" >/dev/null
+              aws ec2 wait instance-running \
+                --instance-ids "${{ env.ECS_INSTANCE_ID }}" \
+                --region "${{ env.AWS_REGION }}"
+              ;;
+            pending|stopping)
+              echo "Waiting for EC2 instance ${ECS_INSTANCE_ID} to become running..."
+              aws ec2 wait instance-running \
+                --instance-ids "${{ env.ECS_INSTANCE_ID }}" \
+                --region "${{ env.AWS_REGION }}"
+              ;;
+            *)
+              echo "EC2 instance ${ECS_INSTANCE_ID} is in unsupported state: $INSTANCE_STATE" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "Waiting for SSM PingStatus=Online..."
+          for i in $(seq 1 30); do
+            PING_STATUS=$(aws ssm describe-instance-information \
+              --filters "Key=InstanceIds,Values=${{ env.ECS_INSTANCE_ID }}" \
+              --region "${{ env.AWS_REGION }}" \
+              --query "InstanceInformationList[0].PingStatus" \
+              --output text 2>/dev/null || echo "Offline")
+
+            if [ "$PING_STATUS" = "Online" ]; then
+              echo "SSM agent is online."
+              break
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "SSM agent did not become online after 300 seconds (last status: $PING_STATUS)." >&2
+              exit 1
+            fi
+
+            echo "Attempt $i: SSM status=$PING_STATUS. Retrying in 10s..."
+            sleep 10
+          done
+
       - name: Deploy new image to EC2 via SSM
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
