@@ -26,9 +26,9 @@ resource "aws_instance" "churn_app" {
   }
 
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    aws_region  = var.aws_region
+    aws_region   = var.aws_region
     ecr_repo_url = aws_ecr_repository.churn_app.repository_url
-    app_port    = var.app_port
+    app_port     = var.app_port
   })
 
   tags = {

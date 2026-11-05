@@ -33,3 +33,7 @@ resource "aws_iam_instance_profile" "ec2_ecr_profile" {
   name = "${var.project_name}-ec2-ecr-profile"
   role = aws_iam_role.ec2_ecr_role.name
 }
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
+  role       = aws_iam_role.ec2_ecr_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}

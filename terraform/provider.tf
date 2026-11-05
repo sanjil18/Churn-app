@@ -41,3 +41,9 @@ variable "ssh_cidr" {
   type        = string
   default     = "0.0.0.0/0"
 }
+
+variable "alert_email" {
+  description = "Email address that receives CloudWatch alarm notifications"
+  type        = string
+  default     = "sanjilraj2@gmail.com"
+}
