@@ -39,7 +39,7 @@ variable "app_port" {
 variable "ssh_cidr" {
   description = "CIDR allowed to SSH into the instance. Set to your own IP/32 for security, not 0.0.0.0/0."
   type        = string
-  default     = "0.0.0.0/0"
+  default     = "127.0.0.1/32"
 }
 
 variable "alert_email" {
