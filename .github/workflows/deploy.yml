@@ -152,7 +152,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          cat > /tmp/deploy-commands.json << 'EOFC'
+          cat > /tmp/deploy-commands.json << EOFC
           {
             "commands": [
               "aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
@@ -160,8 +160,8 @@ jobs:
               "docker stop churn-app || true",
               "docker rm churn-app || true",
               "docker run -d --restart unless-stopped -p 8000:8000 --name churn-app ${ECR_REGISTRY}/churn-app-repo:latest",
-              "READY=0; for i in $(seq 1 30); do if curl -fsS -m 2 http://localhost:8000/ready > /dev/null; then READY=1; break; fi; sleep 2; done",
-              "if [ $READY -ne 1 ]; then echo 'Health check failed: /ready did not return 200 within 60s' >&2; docker logs --tail 50 churn-app 1>&2; exit 1; fi",
+              "READY=0; for i in \$(seq 1 30); do if curl -fsS -m 2 http://localhost:8000/ready > /dev/null; then READY=1; break; fi; sleep 2; done",
+              "if [ \$READY -ne 1 ]; then echo 'Health check failed: /ready did not return 200 within 60s' >&2; docker logs --tail 50 churn-app 1>&2; exit 1; fi",
               "docker system df",
               "docker image prune -af"
             ]
