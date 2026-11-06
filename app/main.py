@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.schema import CustomerInput, PredictionOutput
-from app.model_utils import predict_churn, load_model
+from app.model_utils import predict_churn, load_model, MODEL_NAME, MODEL_RECALL
 
 app = FastAPI(
     title="Customer Churn Prediction API",
@@ -49,6 +49,14 @@ def readiness_check():
     if not model_ready:
         raise HTTPException(status_code=503, detail="Model not loaded")
     return {"status": "ready"}
+
+
+@app.get("/version")
+def version():
+    # Identifies which model is actually running, and its verified recall at
+    # the real production decision threshold -- not a default-threshold number
+    # lifted from an earlier, slightly different training run.
+    return {"model_name": MODEL_NAME, "recall": MODEL_RECALL}
 
 
 @app.post("/predict", response_model=PredictionOutput)

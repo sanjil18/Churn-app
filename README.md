@@ -50,7 +50,7 @@ Every push to `main` triggers GitHub Actions to build the image, push it to ECR,
 
 ## What This Project Demonstrates
 
-- **ML methodology done correctly**: SMOTE is applied *inside* an `imblearn` pipeline, not before the train/test split — avoiding the data leakage that comes from oversampling before cross-validation. Evaluated with precision/recall/F1, not just accuracy, because the dataset is class-imbalanced (churners are the minority class).
+- **ML methodology done correctly**: SMOTE oversampling is applied to the training split only, *after* the train/test split — the test set never sees synthetic samples, avoiding data leakage. The deployed model and its metrics are verified directly against the actual `model/churn_model.joblib` artifact (`verify_model.py`), not assumed from notebook output — evaluated with precision/recall/F1, not just accuracy, because the dataset is class-imbalanced (churners are the minority class).
 - **Experiment tracking with MLflow**: hyperparameters, evaluation metrics, and the trained model artifact are all logged per run, backed by a SQLite tracking store — not just numbers eyeballed in notebook output.
 - **API development with FastAPI**, including Pydantic schema validation on every request field (e.g. `Contract` is constrained to the three actual values the model was trained on, not a free-text string).
 - **Containerization with Docker** — a reproducible image, not "works on my machine."
@@ -97,6 +97,8 @@ churn-app/
 ├── .github/workflows/
 │   └── deploy.yml                 # CI/CD: build, push to ECR, redeploy via SSM
 ├── Tabular_classification.ipynb   # Model training notebook (MLflow-tracked)
+├── verify_model.py                # Re-evaluates the deployed model artifact at the real production threshold
+├── log_deployed_model_run.py      # Logs a corrected MLflow run matching the actual deployed artifact
 ├── Dockerfile                     # Container image definition
 ├── requirements.txt                # Python dependencies (app runtime only)
 └── README.md
@@ -152,18 +154,18 @@ No manual steps are needed after the initial `terraform apply`; every subsequent
 ## Model Details
 
 - **Dataset**: [Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) (Kaggle) — 7,043 customers, 21 features, binary churn label.
-- **Model**: `RandomForestClassifier` (`n_estimators=500`, `max_depth=15`), with `SMOTE` oversampling applied inside an `imblearn` pipeline to correct for class imbalance without leaking test data into training.
-- **Decision threshold**: predictions use a 0.4 probability threshold (rather than the default 0.5) to bias toward catching more at-risk customers — in a churn-prevention context, a missed churner is typically costlier than a false alarm.
-- **Metrics** (from the MLflow-tracked run, test set):
+- **Model**: `RandomForestClassifier` (`n_estimators=500`, `max_depth=15`, `class_weight="balanced"`), trained on a SMOTE-resampled training split to correct for class imbalance without leaking synthetic or test data across the split.
+- **Decision threshold**: predictions use a 0.4 probability threshold (rather than the default 0.5) to bias toward catching more at-risk customers — in a churn-prevention context, a missed churner is typically costlier than a false alarm. Live at [`GET /version`](http://13.63.133.16:8000/version), which reports the deployed model name and its verified recall.
+- **Metrics** — verified directly against the deployed `model/churn_model.joblib` artifact via `verify_model.py`, evaluated at the real production threshold (0.4), and logged to MLflow as the `random-forest-smote-v1-deployed` run:
 
   | Metric | Score |
   | --- | --- |
-  | Accuracy | 0.791 |
-  | Precision | 0.600 |
-  | Recall | 0.627 |
-  | F1 | 0.613 |
+  | Accuracy | 0.7715 |
+  | Precision | 0.5507 |
+  | Recall | 0.7426 |
+  | F1 | 0.6324 |
 
-  Precision/recall/F1 — not just accuracy — are the metrics that matter here, since the "churn" class is a minority of the dataset.
+  Precision/recall/F1 — not just accuracy — are the metrics that matter here, since the "churn" class is a minority of the dataset. Recall is deliberately prioritized over precision (via the lowered 0.4 threshold): at the default 0.5 threshold the same model recalls only 0.627 of actual churners; at 0.4 it catches 0.743 of them, at the cost of more false positives. For a churn-prevention product, a missed churner is assumed to cost more than an unnecessary retention offer.
 
 ## What I'd Improve With More Time
 

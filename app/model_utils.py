@@ -8,6 +8,13 @@ MODEL_PATH = Path(__file__).parent.parent / "model" / "churn_model.joblib"
 # who's actually going to churn but gets missed costs more than a false alarm does.
 CHURN_THRESHOLD = 0.4
 
+# Identifies the deployed model for /version and the README. Verified against
+# the actual model/churn_model.joblib artifact by verify_model.py and logged
+# to MLflow as the "random-forest-smote-v1-deployed" run -- recall measured
+# at the real production threshold above, not the model's default 0.5.
+MODEL_NAME = "random-forest-smote-v1"
+MODEL_RECALL = 0.7426
+
 _model = None
 
 
